@@ -5,7 +5,7 @@
 #include<cmath>
 
 
-const uint16_t BUFFER_SIZE = 20;
+const uint32_t BUFFER_SIZE = 262145;
 
 bool CaseCompare(std::string& s1, std::string& s2) {
 	transform(s1.begin(), s1.end(), s1.begin(), ::tolower);
