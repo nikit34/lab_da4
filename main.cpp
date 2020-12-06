@@ -4,18 +4,19 @@
 #include<cmath>
 
 
-const uint64_t BUFFER_SIZE = 100000000;
+const uint64_t BUFFER_SIZE = 1000000;
 
 template <typename DT>
 class GVector {
 private:
 	DT* data;
-	uint64_t capacity;
-	uint64_t size;
+	int64_t capacity;
+	int64_t size;
+	int64_t first_index;
 
 public:
-    GVector(uint64_t n=10000);
-	GVector(uint64_t n, DT&& default_value);
+	GVector(int64_t n = 1000000);
+	GVector(int64_t n, DT&& default_value);
 
 	~GVector() {
 		delete[] this->data;
@@ -25,47 +26,43 @@ public:
 	}
 
 	void PushBack(DT data);
+	void RemoveFirst(int64_t index);
 
-	void Reserve(uint64_t size);
+	void Reserve(int64_t size);
 
-	uint64_t Size() const;
-	DT& operator[](uint64_t index);
-	DT operator[](uint64_t index) const;
+	int64_t Size() const;
+	DT& operator[](int64_t index);
+	DT operator[](int64_t index) const;
 };
 
 template<typename DT>
-GVector<DT>::GVector(uint64_t n): data(new DT[n]), capacity(n), size(0){ }
+GVector<DT>::GVector(int64_t n) : data(new DT[n]), capacity(n), size(0), first_index(0) { }
 
 template<typename DT>
-GVector<DT>::GVector(uint64_t n, DT&& default_value) {
+GVector<DT>::GVector(int64_t n, DT&& default_value) {
 	this->capacity = n;
 	this->data = new DT[this->capacity];
 	this->size = this->capacity;
-	for (uint64_t i = 0; i < this->size; ++i)
+	for (int64_t i = 0; i < this->size; ++i)
 		this->data[i] = default_value;
+	this->first_index = 0;
 }
 
 template <typename DT>
 void GVector<DT>::PushBack(DT data) {
-	if (this->size + 1 == this->capacity) {
-		uint64_t newStorageSize = this->capacity ? this->capacity * 2 : 1;
-		DT* newStorage = new DT[newStorageSize];
-		std::copy(this->data, this->data + this->capacity, newStorage);
-		delete[] this->data;
-		this->data = newStorage;
-		this->capacity = newStorageSize;
-	}
-	this->data[this->size] = data;
-	this->size++;
+	if (this->size == this->capacity)
+		throw std::length_error("Size nobody has not equal capacity");
+	this->data[(this->first_index + this->size) % this->capacity] = data;
+	++this->size;
 }
 
 template<typename DT>
-void GVector<DT>::Reserve(uint64_t size){
+void GVector<DT>::Reserve(int64_t size) {
 	if (size <= this->capacity)
 		return;
 
 	DT* tmp = new DT[size];
-	for (uint64_t i = 0; i < this->capacity; ++i)
+	for (int64_t i = 0; i < this->capacity; ++i)
 		tmp[i] = this->data[i];
 
 	delete[] this->data;
@@ -74,26 +71,34 @@ void GVector<DT>::Reserve(uint64_t size){
 }
 
 template <typename DT>
-uint64_t GVector<DT>::Size() const {
+int64_t GVector<DT>::Size() const {
 	return this->size;
 }
 
 template <typename DT>
-DT& GVector<DT>::operator[](uint64_t index) {
+DT& GVector<DT>::operator[](int64_t index) {
 	if (index >= this->size) {
 		std::cout << "Error: data index out of bounds";
 		exit(0);
 	}
-	return *(this->data + index);
+	return *(this->data + (this->first_index + index) % this->capacity);
 }
 
 template <typename DT>
-DT GVector<DT>::operator[](uint64_t index) const {
+DT GVector<DT>::operator[](int64_t index) const {
 	if (index >= this->size) {
 		std::cout << "Error: data index out of bounds";
 		exit(0);
 	}
-	return *(this->data + index);
+	return *(this->data + (this->first_index + index) % this->capacity);
+}
+
+template<typename DT>
+void GVector<DT>::RemoveFirst(int64_t index) {
+	if (index > this->size)
+		index = this->size;
+	this->first_index = (this->first_index + index) % this->capacity;
+	this->size = this->size - index;
 }
 
 bool CaseCompare(std::string& s1, std::string& s2) {
@@ -104,8 +109,8 @@ bool CaseCompare(std::string& s1, std::string& s2) {
 	return false;
 }
 
-void PrefixFunction(GVector<std::string>& pattern, GVector<uint64_t>& pi) {
-	uint64_t i, j;
+void PrefixFunction(GVector<std::string>& pattern, GVector<int64_t>& pi) {
+	int64_t i, j;
 	for (i = 1; i < pattern.Size(); ++i) {
 		j = pi[i - 1];
 		while ((j > 0) && !CaseCompare(pattern[i], pattern[j]))
@@ -116,10 +121,10 @@ void PrefixFunction(GVector<std::string>& pattern, GVector<uint64_t>& pi) {
 	}
 }
 
-void KMP(GVector<uint64_t>& prefix, GVector<std::string>& pattern, GVector<std::string>& text, uint16_t& begin, GVector<int64_t>& result) {
+void KMP(GVector<int64_t>& prefix, GVector<std::string>& pattern, GVector<std::string>& text, uint16_t& begin, GVector<int64_t>& result) {
 	int64_t i, k;
-	uint64_t text_size = text.Size();
-	uint64_t pattern_size = pattern.Size();
+	int64_t text_size = text.Size();
+	int64_t pattern_size = pattern.Size();
 	for (k = 0, i = begin; i < text_size; ++i) {
 		while ((k > 0) && !CaseCompare(pattern[k], text[i])) {
 			k = prefix[k - 1];
@@ -134,11 +139,11 @@ void KMP(GVector<uint64_t>& prefix, GVector<std::string>& pattern, GVector<std::
 	}
 }
 
-void PrintResults(GVector<int64_t>& result, GVector<int64_t>& lines, int64_t& lines_count, uint64_t& pattern_size, int64_t& start_off) {
+void PrintResults(GVector<int64_t>& result, GVector<int64_t>& lines, int64_t& lines_count, int64_t& pattern_size, int64_t& start_off) {
 	int64_t prev_line = 0;
 	int64_t i, j, k, b;
-	uint64_t lines_size = lines.Size();
-	uint64_t result_size = result.Size();
+	int64_t lines_size = lines.Size();
+	int64_t result_size = result.Size();
 	for (i = 0, j = 0, k = 0; i < BUFFER_SIZE; ++i) {
 		if (j < lines_size) {
 			if (i == lines[j]) {
@@ -178,7 +183,6 @@ int main() {
 
 	GVector<std::string> buffer;
 	buffer.Reserve(BUFFER_SIZE);
-	GVector<std::string> tmp;
 
 	std::string word;
 
@@ -195,10 +199,10 @@ int main() {
 		}
 	}
 
-	uint64_t pattern_size = (uint64_t)pattern.Size();
-	uint64_t used_space = (uint64_t)buffer.Size();
+	int64_t pattern_size = (int64_t)pattern.Size();
+	int64_t used_space = 0;
 
-	GVector<uint64_t> prefix(pattern_size, 0);
+	GVector<int64_t> prefix(pattern_size, 0);
 	PrefixFunction(pattern, prefix);
 
 	bool first_search = true;
@@ -216,8 +220,8 @@ int main() {
 	while (std::cin >> word) {
 		buffer.PushBack(word);
 		++used_space;
-		if (used_space > BUFFER_SIZE - pattern_size) {
-			tmp.PushBack(word);
+		if (used_space > BUFFER_SIZE - buffer.Size()) {
+			buffer.RemoveFirst(used_space + buffer.Size() - BUFFER_SIZE);
 		}
 
 		if (used_space == BUFFER_SIZE) {
@@ -228,12 +232,11 @@ int main() {
 			}
 			else {
 				begin = 1;
-				pattern_size = (uint64_t)pattern.Size();
+				pattern_size = (int64_t)pattern.Size();
 			}
 			KMP(prefix, pattern, buffer, begin, result);
 			PrintResults(result, lines, lines_count, pattern_size, prev);
 
-			buffer = tmp;
 			used_space = buffer.Size();
 		}
 		while (std::cin.peek() == ' ') {
@@ -249,9 +252,9 @@ int main() {
 		begin = 0;
 		pattern_size = 0;
 	}
-	else{
+	else {
 		begin = 1;
-		pattern_size = (uint64_t)pattern.Size();
+		pattern_size = (int64_t)pattern.Size();
 	}
 	KMP(prefix, pattern, buffer, begin, result);
 	PrintResults(result, lines, lines_count, pattern_size, prev);
