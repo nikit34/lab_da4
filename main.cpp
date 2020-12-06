@@ -1,8 +1,9 @@
 #include <iostream>
-#include <sstream>
 #include <vector>
+#include <sstream>
 #include <string>
 #include <memory>
+#include <chrono>
 
 
 struct elem_type {
@@ -49,6 +50,10 @@ private:
 
 
 int main() {
+	std::chrono::time_point<std::chrono::system_clock> start, end;
+	int time;
+	start = std::chrono::system_clock::now();
+
 	std::vector<std::string> pattern;
 
 	std::string first_line;
@@ -152,4 +157,11 @@ int main() {
 		pattern_index = sp[pattern_index - 1];
 		text_index = pattern_index;
 	}
+
+
+	end = std::chrono::system_clock::now();
+	time = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+
+
+	std::cout << "KMP TIME: " << time << std::endl;
 }
