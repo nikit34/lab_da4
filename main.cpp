@@ -196,7 +196,7 @@ int main() {
 	}
 
 	uint64_t pattern_size = (uint64_t)pattern.Size();
-	uint64_t unused_space = (uint64_t)buffer.Size();
+	uint64_t used_space = (uint64_t)buffer.Size();
 
 	GVector<uint64_t> prefix(pattern_size, 0);
 	PrefixFunction(pattern, prefix);
@@ -209,18 +209,18 @@ int main() {
 	}
 	while (std::cin.peek() == '\n') {
 		std::cin.get();
-		lines.PushBack(unused_space);
+		lines.PushBack(used_space);
 	}
 
 	uint16_t begin;
 	while (std::cin >> word) {
 		buffer.PushBack(word);
-		++unused_space;
-		if (unused_space > BUFFER_SIZE - pattern_size) {
+		++used_space;
+		if (used_space > BUFFER_SIZE - pattern_size) {
 			tmp.PushBack(word);
 		}
 
-		if (unused_space == BUFFER_SIZE) {
+		if (used_space == BUFFER_SIZE) {
 			if (first_search) {
 				begin = 0;
 				pattern_size = 0;
@@ -234,14 +234,14 @@ int main() {
 			PrintResults(result, lines, lines_count, pattern_size, prev);
 
 			buffer = tmp;
-			unused_space = buffer.Size();
+			used_space = buffer.Size();
 		}
 		while (std::cin.peek() == ' ') {
 			std::cin.get();
 		}
 		while (std::cin.peek() == '\n') {
 			std::cin.get();
-			lines.PushBack(unused_space);
+			lines.PushBack(used_space);
 		}
 	}
 
